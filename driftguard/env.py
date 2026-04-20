@@ -136,6 +136,11 @@ class DriftGuardEnv:
         if (not self.world.drift_applied) and self.world.step_count >= self.world.drift_step:
             drift_info = apply_schema_drift(self.world.working_repo)
             self.world.drift_applied = True
+            self.world.status = {
+                "tests_passed": False,
+                "schema_passed": False,
+                "policy_passed": False,
+            }
 
         result = self._execute_tool(action)
         self._update_status(action.tool, result)

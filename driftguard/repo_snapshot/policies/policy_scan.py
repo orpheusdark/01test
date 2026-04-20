@@ -20,6 +20,8 @@ def scan_repo(repo_root: str) -> Dict[str, Any]:
             continue
         if ".pytest_cache" in p.parts or "__pycache__" in p.parts:
             continue
+        if p.name == "policy_rules.py":
+            continue
 
         rel = p.relative_to(root).as_posix()
         text = p.read_text(encoding="utf-8", errors="ignore")

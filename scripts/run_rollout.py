@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from driftguard.env import DriftGuardEnv
 from driftguard.state import Observation
 
 
-SMART_OLD_SNIPPET = """
+SMART_OLD_SNIPPET = '''
 def parse_user(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Initial parser supports v1 only; migration should add v2 compatibility."""
     active = _active_schema_name()
@@ -26,10 +32,9 @@ def parse_user(payload: Dict[str, Any]) -> Dict[str, Any]:
         "name": str(payload["name"]),
         "email": str(payload["email"]),
     }
-""".strip("
-")
+'''.strip("\n")
 
-SMART_NEW_SNIPPET = """
+SMART_NEW_SNIPPET = '''
 def parse_user(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Supports v1 and v2 while returning canonical output keys."""
     active = _active_schema_name()
@@ -44,18 +49,21 @@ def parse_user(payload: Dict[str, Any]) -> Dict[str, Any]:
     email = payload.get("email")
     if email is None and isinstance(payload.get("contact"), dict):
         email = payload["contact"].get("email")
+    if not email:
+        email = "unknown@example.com"
 
     name = payload.get("name")
     if name is None:
         name = payload.get("full_name")
+    if not name:
+        name = "unknown"
 
     return {
         "id": int(payload["id"]),
         "name": str(name),
         "email": str(email),
     }
-""".strip("
-")
+'''.strip("\n")
 
 
 def naive_policy(obs: Observation) -> Dict[str, Any]:
@@ -126,22 +134,31 @@ def main() -> None:
     while not done:
         action = policy(obs)
         obs, reward, done, info = env.step(action)
-        print(json.dumps({
-            "step": obs.step,
-            "action": action,
-            "reward": round(reward, 4),
-            "status": info["status"],
-            "drift": info.get("drift"),
-        }))
+        print(
+            json.dumps(
+                {
+                    "step": obs.step,
+                    "action": action,
+                    "reward": round(reward, 4),
+                    "status": info["status"],
+                    "drift": info.get("drift"),
+                }
+            )
+        )
 
     result = env.episode_result()
     print("\n=== FINAL ===")
-    print(json.dumps({
-        "success": result.success,
-        "total_reward": round(result.total_reward, 4),
-        "steps": result.steps,
-        "status": result.status,
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "success": result.success,
+                "total_reward": round(result.total_reward, 4),
+                "steps": result.steps,
+                "status": result.status,
+            },
+            indent=2,
+        )
+    )
     env.close()
 
 
