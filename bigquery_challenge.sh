@@ -15,7 +15,8 @@ echo "=============================="
 
 echo "Creating dataset..."
 
-bq --location=US mk -d --if_not_exists ${PROJECT_ID}:covid
+bq show ${PROJECT_ID}:covid >/dev/null 2>&1 || \
+bq --location=US mk -d ${PROJECT_ID}:covid
 
 echo "Creating partitioned table..."
 
